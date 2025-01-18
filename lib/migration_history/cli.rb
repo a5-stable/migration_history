@@ -91,6 +91,7 @@ module MigrationHistory
               <th>Timestamp</th>
               <th>Git Branch</th>
               <th>Git Commit</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -99,6 +100,7 @@ module MigrationHistory
                 <td><%= entry.timestamp %></td>
                 <td><%= entry.git_branch %></td>
                 <td><%= entry.git_commit %></td>
+                <td><%= entry.action %></td>
               </tr>
             <% end %>
           </tbody>

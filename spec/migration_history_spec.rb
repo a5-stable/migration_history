@@ -27,7 +27,7 @@ RSpec.describe MigrationHistory do
       end
     end
 
-    MigrationHistory::Tracker.new.setup!  
+    MigrationHistory::Tracker.new("spec/migrations").setup!
   end
 
   after(:all) do

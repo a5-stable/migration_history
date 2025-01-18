@@ -1,4 +1,6 @@
 require "migration_history/cli"
+require "active_record"
+require "rails"
 
 module MigrationHistory
   class InvalidError
@@ -25,9 +27,10 @@ module MigrationHistory
    
     a = Tracker.new
     a.setup!
+    binding.irb
     found_migration_info = a.migration_info.values.select do |v|
-      v[:details][:table_name] == table_name &&
-        (column_name.nil? || v[:details][:column_name] == column_name) &&
+      v.dig(:details, :table_name) == table_name &&
+        (column_name.nil? || v.dig(:details, :column_name) == column_name) &&
         (action_name.nil? || v[:action] == action_name)
     end
 
@@ -35,52 +38,59 @@ module MigrationHistory
       Result.new(
         timestamp: info[:timestamp],
         git_branch: info[:git_branch],
-        git_commit: info[:git_commit]
+        git_commit: info[:git_commit],
+        action: info[:action],
       )
     end
   end
 
   class Result
-    attr_accessor :timestamp, :git_branch, :git_commit
+    attr_accessor :timestamp, :git_branch, :git_commit, :action
 
-    def initialize(timestamp:, git_branch:, git_commit:)
+    def initialize(timestamp:, git_branch:, git_commit:, action:)
       @timestamp = timestamp
       @git_branch = git_branch
       @git_commit = git_commit
+      @action = action
     end
   end
 
   class Tracker
-    attr_accessor :migration_info
-    def initialize
+    attr_accessor :migration_info, :migration_file_dir
+    def initialize(migration_file_dir = nil)
       @migration_info ||= []
+      @migration_file_dir = migration_file_dir || "db/migrate"
     end
 
     def setup!(history = Tracker.new)
-      migration_path = File.expand_path("../spec/migrations", __dir__)
+      migration_path = File.expand_path(File.join(Dir.pwd, @migration_file_dir), __dir__)
       migration_files = Dir.glob(File.join(migration_path, "*.rb"))
 
       migration_histories = {}
 
       migration_files.map do |file|
-        # ファイルを読み込む
-        require file
-      
-        # ファイル内で定義されているクラス名を抽出
-        class_name = nil
-        File.readlines(file).each do |line|
-          if line.strip.start_with?('class ')
-            class_name = line.strip.split(' ')[1]
-            break
+        begin
+          # ファイルを読み込む
+          require file
+        
+          # ファイル内で定義されているクラス名を抽出
+          class_name = nil
+          File.readlines(file).each do |line|
+            if line.strip.start_with?('class ')
+              class_name = line.strip.split(' ')[1]
+              break
+            end
           end
+          next unless class_name
+       
+          migration_histories[class_name] = { 
+            timestamp: File.basename(file).split('_').first.to_i,
+            class_name: class_name,
+            file_path: file
+          }
+        rescue => e
+          puts "Error: #{e.message}"
         end
-        next unless class_name
-     
-        migration_histories[class_name] = { 
-          timestamp: File.basename(file).split('_').first.to_i,
-          class_name: class_name,
-          file_path: file
-        }
       end
 
       migration_classes = migration_histories.keys
@@ -95,7 +105,10 @@ module MigrationHistory
       end
       migration_classes.each do |migration_class|
         migration_histories[migration_class] ||= {}
-        migration_histories[migration_class].merge!(Object.const_get(migration_class).new.exec_migration(nil, :up))
+        result = Object.const_get(migration_class).new.exec_migration(nil, :up)
+
+        next unless result
+        migration_histories[migration_class].merge!(result)
       end
 
       migration_histories.each do |migration_class, migration_info|
@@ -140,6 +153,10 @@ module MigrationHistory
 
     def drop_table(table_name, **options)
       record_migration_action(:drop_table, table_name: table_name, options: options)
+    end
+
+    def method_missing(method_name, *args, **options)
+      nil
     end
 
     private
