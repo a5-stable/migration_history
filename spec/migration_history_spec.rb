@@ -31,11 +31,12 @@ RSpec.describe MigrationHistory do
   end
 
   after(:all) do
-    ActiveRecord::Base.connection.drop_table(:users, if_exists: true)
+    # ActiveRecord::Base.connection.drop_table(:users, if_exists: true)
   end
 
   describe ".setup!" do
     it "executes migrations and tracks changes" do
+      MigrationHistory.for_table_created("users")
       # テスト用にsetup!を実行
       allow(ActiveRecord::Tasks::DatabaseTasks).to receive(:migrate)
       described_class.setup!
