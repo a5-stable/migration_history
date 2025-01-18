@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require "migration_history"
+
+MigrationHistory::CLI.start

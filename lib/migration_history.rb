@@ -1,3 +1,5 @@
+require "migration_history/cli"
+
 module MigrationHistory
   class InvalidError
     def initialize(message)
@@ -7,18 +9,18 @@ module MigrationHistory
 
   def self.for_table_created(table_name)
     raise InvalidError.new("Table name is required") unless table_name
-    filter(table_name, nil, action_name = "create_table")
+    filter(table_name, nil, "create_table")
   end
 
   def self.for_column_added(table_name, column_name)
     raise InvalidError.new("Table name and column name are required") unless table_name && column_name
-    filter(table_name, column_name, action_name = "add_column")
+    filter(table_name, column_name, "add_column")
   end
 
   def self.filter(table_name, column_name = nil, action_name = nil)
-    table_name = table_name.to_s
-    column_name = column_name.to_s if column_name
-    action_name = action_name.to_s if action_name
+    table_name = table_name.to_sym
+    column_name = column_name.to_sym if column_name
+    action_name = action_name.to_sym if action_name
     raise InvalidError.new("Table name is required") unless table_name
    
     a = Tracker.new
