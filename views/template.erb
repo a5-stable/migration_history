@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migration History</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Migration History</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>DateTime</th>
+        <th>Target Table</th>
+        <th>Action</th>
+        <th>Details</th>
+        <th>File Path</th>
+        <th>Git Commit</th>
+        <th>Git Branch</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% result_set.original_result.values.each do |migration| %>
+        <tr>
+          <td><%= Time.parse(migration[:timestamp].to_s) %></td>
+          <td><%= migration.dig(:details, :table_name) %></td>
+          <td><%= migration[:action] %></td>
+          <td>
+            Table: <%= migration.dig(:details, :table_name) %><br>
+            <% if migration.dig(:details, :column_name) %>
+              Column: <%= migration.dig(:details, :column_name) %><br>
+              Type: <%= migration.dig(:details, :type) %><br>
+              Options: <%= migration.dig(:details, :options) %>
+            <% else %>
+              Options: <%= migration.dig(:details, :options) %>
+            <% end %>
+          </td>
+          <td><%= migration[:file_path] %></td>
+          <td><%= migration[:git_commit] %></td>
+          <td><%= migration[:git_branch] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</body>
+</html>

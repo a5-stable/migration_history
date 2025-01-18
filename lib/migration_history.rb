@@ -3,6 +3,25 @@ require "active_record"
 require "rails"
 
 module MigrationHistory
+  class Formatter;end
+  class HTMLFormatter < Formatter
+    attr_accessor :output_file_name
+
+    def initialize(output_file_name = nil)
+      @output_file_name ||= "migration_history.html"
+    end
+
+    def format(result_set)
+      File.open(File.join(Dir.pwd, output_file_name), "wb") do |file|
+        file.puts template("template").result(binding)
+      end
+    end
+
+    def template(name)
+      ERB.new(File.read(File.join(File.dirname(__FILE__), "../views/", "#{name}.erb")))
+    end
+  end
+
   class InvalidError
     def initialize(message)
       @message = message
@@ -27,34 +46,34 @@ module MigrationHistory
    
     a = Tracker.new
     a.setup!
-    binding.irb
     found_migration_info = a.migration_info.values.select do |v|
       v.dig(:details, :table_name) == table_name &&
         (column_name.nil? || v.dig(:details, :column_name) == column_name) &&
         (action_name.nil? || v[:action] == action_name)
     end
 
-    found_migration_info.map do |info|
-      Result.new(
-        timestamp: info[:timestamp],
-        git_branch: info[:git_branch],
-        git_commit: info[:git_commit],
-        action: info[:action],
-      )
-    end
+    ResultSet.new(found_migration_info)
   end
 
-  class Result
-    attr_accessor :timestamp, :git_branch, :git_commit, :action
+  def self.all
+    a = Tracker.new
+    a.setup!
 
-    def initialize(timestamp:, git_branch:, git_commit:, action:)
-      @timestamp = timestamp
-      @git_branch = git_branch
-      @git_commit = git_commit
-      @action = action
-    end
+    ResultSet.new(a.migration_info)
   end
 
+  class ResultSet
+    attr_accessor :original_result
+
+    def initialize(original_result)
+      @original_result = original_result
+    end
+
+    def format!
+      formatter = Formatter.new
+      formatter.format(self)
+    end
+  end
   class Tracker
     attr_accessor :migration_info, :migration_file_dir
     def initialize(migration_file_dir = nil)
@@ -97,8 +116,7 @@ module MigrationHistory
 
       ActiveRecord::Migration::Compatibility.constants.each do |const_name|
         mod = ActiveRecord::Migration::Compatibility.const_get(const_name)
-      
-        # モジュールであれば `prepend` を適用
+
         if mod.is_a?(Module)
           mod.prepend(MethodOverrides)
         end
@@ -108,7 +126,12 @@ module MigrationHistory
         result = Object.const_get(migration_class).new.exec_migration(nil, :up)
 
         next unless result
-        migration_histories[migration_class].merge!(result)
+
+        if result.is_a?(Array)
+          migration_histories[migration_class][:with_columns] = result
+        else
+          migration_histories[migration_class].merge!(result)
+        end
       end
 
       migration_histories.each do |migration_class, migration_info|
@@ -137,10 +160,51 @@ module MigrationHistory
       "error_fetching_branch: #{e.message}"
     end
   end
+end
 
+module MigrationHistory    
   module MethodOverrides
+    class DummyConnectionPool
+      def supports_datetime_with_precision?
+        false
+      end
+    end
     def create_table(table_name, **options)
+      columns = []
+      dummy_conn = DummyConnectionPool.new
+      
+      table_definition = ActiveRecord::ConnectionAdapters::TableDefinition.new(dummy_conn, table_name)
+      table_definition.singleton_class.prepend(Module.new do
+        column_types.each do |type|
+          define_method(:column) do |name, **options|
+            columns << { name: name, type: type, options: options }
+          end
+        end
+      end)
+      yield(table_definition)
+
       record_migration_action(:create_table, table_name: table_name, options: options)
+      columns.each do |column|
+        record_migration_action(:add_column_with_create_table, table_name: table_name, column_name: column[:name], type: column[:type], options: column[:options])
+      end
+    end
+
+    def change_table(table_name, **options)
+      columns = []
+      dummy_conn = DummyConnectionPool.new
+      table_definition = ActiveRecord::ConnectionAdapters::TableDefinition.new(dummy_conn, table_name)
+      table_definition.singleton_class.prepend(Module.new do
+        column_types.each do |type|
+          define_method(:column) do |name, **options|
+            columns << { name: name, type: type, options: options }
+          end
+        end
+      end)
+      yield(table_definition)
+
+      columns.each do |column|
+        record_migration_action(:add_column, table_name: table_name, column_name: column[:name], type: column[:type], options: column[:options])
+      end
     end
 
     def add_column(table_name, column_name, type, **options)
@@ -156,7 +220,6 @@ module MigrationHistory
     end
 
     def method_missing(method_name, *args, **options)
-      nil
     end
 
     private
@@ -183,4 +246,7 @@ end
 #   def setup!
 #     MigrationTracker.setup!(self)
 #   end
+# end
+# ActiveSupport.on_load(:active_record) do
+#   ActiveRecord::Migration::DefaultStrategy.prepend(MigrationHistory::MethodOverrides)
 # end

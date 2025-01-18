@@ -1,5 +1,6 @@
 require 'thor'
 require 'erb'
+require "migration_history"
 
 module MigrationHistory
   class CLI < Thor
@@ -14,6 +15,20 @@ module MigrationHistory
       action_name = options[:action]
 
       result = MigrationHistory.filter(table_name, column_name, action_name)
+
+      if options[:output]
+        generate_html(result, options[:output])
+      else
+        result.each do |entry|
+          puts "Timestamp: #{entry.timestamp}, Git Branch: #{entry.git_branch}, Git Commit: #{entry.git_commit}"
+        end
+      end
+    end
+
+    desc "all", "全てのマイグレーション履歴を取得"
+    option :output, required: false, desc: "HTML出力ファイル名"
+    def all
+      result = MigrationHistory.all
 
       if options[:output]
         generate_html(result, options[:output])
@@ -61,63 +76,7 @@ module MigrationHistory
     private
 
     def generate_html(result, output_file)
-      template = <<-HTML
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Migration History</title>
-        <style>
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          th, td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-          }
-          th {
-            background-color: #f2f2f2;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Migration History</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Git Branch</th>
-              <th>Git Commit</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% result.each do |entry| %>
-              <tr>
-                <td><%= entry.timestamp %></td>
-                <td><%= entry.git_branch %></td>
-                <td><%= entry.git_commit %></td>
-                <td><%= entry.action %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </body>
-      </html>
-      HTML
-
-      # ERBテンプレートをレンダリング
-      erb_template = ERB.new(template)
-      html_output = erb_template.result(binding)
-
-      # HTMLを指定されたファイルに書き込む
-      File.open(output_file, 'w') do |file|
-        file.write(html_output)
-      end
-
+      HTMLFormatter.new.format(result)
       puts "HTMLファイルが #{output_file} に出力されました。"
     end
   end

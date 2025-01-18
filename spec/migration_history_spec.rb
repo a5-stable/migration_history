@@ -27,7 +27,9 @@ RSpec.describe MigrationHistory do
       end
     end
 
-    MigrationHistory::Tracker.new("spec/migrations").setup!
+    a = MigrationHistory::Tracker.new("spec/migrations")
+    binding.irb
+    a.setup!
   end
 
   after(:all) do
@@ -36,7 +38,6 @@ RSpec.describe MigrationHistory do
 
   describe ".setup!" do
     it "executes migrations and tracks changes" do
-      binding.irb
       MigrationHistory.for_table_created("users")
       # テスト用にsetup!を実行
       allow(ActiveRecord::Tasks::DatabaseTasks).to receive(:migrate)
