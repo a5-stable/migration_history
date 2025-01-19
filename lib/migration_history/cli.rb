@@ -1,6 +1,10 @@
-require 'thor'
-require 'erb'
+# frozen_string_literal: true
+
+require "thor"
+require "erb"
 require "migration_history"
+require "migration_history/formatter/base"
+require "migration_history/formatter/html_formatter"
 
 module MigrationHistory
   class CLI < Thor
@@ -59,6 +63,7 @@ module MigrationHistory
     option :table, required: true, desc: "テーブル名"
     option :column, required: true, desc: "カラム名"
     option :output, required: false, desc: "HTML出力ファイル名"
+
     def column
       table_name = options[:table]
       column_name = options[:column]
@@ -74,10 +79,9 @@ module MigrationHistory
     end
 
     private
-
-    def generate_html(result, output_file)
-      HTMLFormatter.new.format(result)
-      puts "HTMLファイルが #{output_file} に出力されました。"
-    end
+      def generate_html(result, output_file)
+        Formatter::HTMLFormatter.new.format(result)
+        puts "HTMLファイルが #{output_file} に出力されました。"
+      end
   end
 end

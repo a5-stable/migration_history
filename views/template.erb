@@ -40,25 +40,25 @@
       </tr>
     </thead>
     <tbody>
-      <% result_set.original_result.values.each do |migration| %>
-        <tr>
-          <td><%= Time.parse(migration[:timestamp].to_s) %></td>
-          <td><%= migration.dig(:details, :table_name) %></td>
-          <td><%= migration[:action] %></td>
-          <td>
-            Table: <%= migration.dig(:details, :table_name) %><br>
-            <% if migration.dig(:details, :column_name) %>
-              Column: <%= migration.dig(:details, :column_name) %><br>
-              Type: <%= migration.dig(:details, :type) %><br>
-              Options: <%= migration.dig(:details, :options) %>
-            <% else %>
-              Options: <%= migration.dig(:details, :options) %>
-            <% end %>
-          </td>
-          <td><%= migration[:file_path] %></td>
-          <td><%= migration[:git_commit] %></td>
-          <td><%= migration[:git_branch] %></td>
-        </tr>
+      <% result_set.original_result.each_value do |migration| %>
+        <% migration[:migrations].each do |action| %>
+          <tr>
+            <td><%= Time.at(migration[:timestamp]).strftime('%Y-%m-%d %H:%M:%S') %></td>
+            <td><%= action.dig(:details, :table_name) %></td>
+            <td><%= action[:action] %></td>
+            <td>
+              Table: <%= action.dig(:details, :table_name) %><br>
+              <% if action.dig(:details, :column_name) %>
+                Column: <%= action.dig(:details, :column_name) %><br>
+                Type: <%= action.dig(:details, :type) %><br>
+              <% end %>
+              Options: <%= action.dig(:details, :options).inspect %>
+            </td>
+            <td><%= migration[:file_path] %></td>
+            <td><%= migration[:git_commit] %></td>
+            <td><%= migration[:git_branch] %></td>
+          </tr>
+        <% end %>
       <% end %>
     </tbody>
   </table>
