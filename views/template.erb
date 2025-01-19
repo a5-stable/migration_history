@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Migration History</title>
+  <input type="text" id="searchInput" placeholder="Search by any keyword...">
+  <input type="text" id="searchInputByCol1" placeholder="Search Target Table" onkeyup="filterTable(1)">
+  <input type="text" id="searchInputByCol2" placeholder="Search Action" onkeyup="filterTable(2)">
+  <input type="date" id="searchInputBydatetimeStart" placeholder="Start Date (YYYY-MM-DD)">
+  <input type="date" id="searchInputBydatetimeEnd" placeholder="End Date (YYYY-MM-DD)">
+  <button onclick="filterByDateRange()">Filter</button>
   <style>
     table {
       width: 100%;
@@ -13,6 +19,7 @@
       border: 1px solid #ddd;
       padding: 8px;
       text-align: left;
+      cursor: pointer; /* For making columns clickable */
     }
     th {
       background-color: #f4f4f4;
@@ -23,27 +30,43 @@
     tr:hover {
       background-color: #f1f1f1;
     }
+    #searchInput {
+      margin-bottom: 10px;
+      padding: 8px;
+      width: 100%;
+      font-size: 16px;
+    }
+    .sort-arrow {
+      margin-left: 5px;
+      visibility: hidden;
+    }
+    .sorted-asc .sort-arrow::after {
+      content: '▲';
+    }
+    .sorted-desc .sort-arrow::after {
+      content: '▼';
+    }
   </style>
 </head>
 <body>
   <h1>Migration History</h1>
-  <table>
+  <table id="migrationTable">
     <thead>
-      <tr>
-        <th>DateTime</th>
-        <th>Target Table</th>
-        <th>Action</th>
-        <th>Details</th>
-        <th>File Path</th>
-        <th>Git Commit</th>
-        <th>Git Branch</th>
+      <tr id="migrationTable-header">
+        <th onclick="sortTable(0)">DateTime <span class="sort-arrow"></span></th>
+        <th onclick="sortTable(1)">Target Table <span class="sort-arrow"></span></th>
+        <th onclick="sortTable(2)">Action <span class="sort-arrow"></span></th>
+        <th>Details </span></th>
+        <th>File Path </span></th>
+        <th>Git Commit </span></th>
+        <th>Git Branch </span></th>
       </tr>
     </thead>
     <tbody>
       <% result_set.original_result.each_value do |migration| %>
-        <% migration[:migrations].each do |action| %>
-          <tr>
-            <td><%= Time.at(migration[:timestamp]).strftime('%Y-%m-%d %H:%M:%S') %></td>
+        <% migration[:actions].each do |action| %>
+          <tr class="migrationTable-row">
+            <td><%= Time.parse(migration[:timestamp].to_s).strftime('%Y-%m-%d %H:%M') %></td>
             <td><%= action.dig(:details, :table_name) %></td>
             <td><%= action[:action] %></td>
             <td>
@@ -54,7 +77,7 @@
               <% end %>
               Options: <%= action.dig(:details, :options).inspect %>
             </td>
-            <td><%= migration[:file_path] %></td>
+            <td><%= migration[:migration_file_name] %></td>
             <td><%= migration[:git_commit] %></td>
             <td><%= migration[:git_branch] %></td>
           </tr>
@@ -62,5 +85,105 @@
       <% end %>
     </tbody>
   </table>
+
+  <script>
+    let currentSortColumn = null; // To store the current sorted column index
+    let currentSortDirection = true; // true for ascending, false for descending
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const filter = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#migrationTable .migrationTable-row');
+
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+      });
+    });
+
+    document.querySelectorAll('.searchInputByCol').forEach((input, index) => {
+      input.addEventListener('input', function() {
+        filterTable(index);
+      });
+    });
+
+    function filterTable(index) {
+      const filter = document.getElementById(`searchInputByCol${index}`).value.toLowerCase();
+      const rows = document.querySelectorAll('#migrationTable .migrationTable-row');
+
+      rows.forEach(row => {
+        const text = row.querySelectorAll('td')[index].textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+      });
+    }
+
+    function filterByDateRange() {
+      const startInput = document.getElementById('searchInputBydatetimeStart').value;
+      const endInput = document.getElementById('searchInputBydatetimeEnd').value;
+      const startDate = startInput ? new Date(startInput) : null;
+      const endDate = endInput ? new Date(endInput) : null;
+      const rows = document.querySelectorAll('#migrationTable .migrationTable-row');
+
+      rows.forEach(row => {
+        const dateCell = row.cells[0];
+        if (dateCell) {
+          const rowDate = new Date(dateCell.textContent.trim());
+          if (
+            (!startDate || rowDate >= startDate) &&
+            (!endDate || rowDate <= endDate)
+          ) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function sortTable(columnIndex) {
+      const rows = Array.from(document.querySelectorAll('#migrationTable .migrationTable-row'));
+      const direction = currentSortColumn === columnIndex && currentSortDirection ? -1 : 1; // Toggle sort direction if same column
+
+      // Reset all column arrows
+      resetSortArrows();
+
+      rows.sort((rowA, rowB) => {
+        const cellA = rowA.cells[columnIndex].textContent.trim();
+        const cellB = rowB.cells[columnIndex].textContent.trim();
+
+        if (columnIndex === 0) { // For DateTime column, we compare Date objects
+          return (new Date(cellA) - new Date(cellB)) * direction;
+        }
+
+        return cellA.localeCompare(cellB) * direction;
+      });
+
+      rows.forEach(row => document.querySelector('tbody').appendChild(row));
+
+      // Update current sort column and direction
+      currentSortColumn = columnIndex;
+      currentSortDirection = direction === 1;
+
+      updateSortArrows();
+    }
+
+    function resetSortArrows() {
+      const headerCells = document.querySelectorAll('#migrationTable th');
+      headerCells.forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+      });
+    }
+
+    function updateSortArrows() {
+      const headerCells = document.querySelectorAll('#migrationTable th');
+      const arrow = headerCells[currentSortColumn].querySelector('.sort-arrow');
+      if (!arrow) return;
+      if (currentSortDirection) {
+        headerCells[currentSortColumn].classList.add('sorted-asc');
+      } else {
+        headerCells[currentSortColumn].classList.add('sorted-desc');
+      }
+      arrow.style.visibility = 'visible';
+    }
+  </script>
 </body>
 </html>

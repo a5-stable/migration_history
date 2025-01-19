@@ -31,8 +31,8 @@ module MigrationHistory
         migration_histories[class_name] = {
           timestamp: File.basename(file).split("_").first.to_i,
           class_name: class_name,
-          file_path: file,
-          migrations: []
+          migration_file_name: file.split("/").last,
+          actions: []
         }
       rescue => e
         puts "Error: #{e.message}"
@@ -54,11 +54,9 @@ module MigrationHistory
         next unless result
 
         if result.is_a?(Array)
-          result.each do |r|
-            migration_histories[migration_class][:migrations] << r
-          end
+          migration_histories[migration_class][:actions] += result
         else
-          migration_histories[migration_class][:migrations] << result
+          migration_histories[migration_class][:actions] << result
         end
       end
 
