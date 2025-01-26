@@ -126,10 +126,8 @@ module MigrationHistory
       dummy_conn = DummyConnectionPool.new
       table_definition = ActiveRecord::ConnectionAdapters::TableDefinition.new(dummy_conn, table_name)
       table_definition.singleton_class.prepend(Module.new do
-        column_types.each do |type|
-          define_method(:column) do |name, **options|
-            columns << { name: name, type: type, options: options }
-          end
+        define_method(:column) do |name, type, **options|
+          columns << { name: name, type: type, options: options }
         end
       end)
       yield(table_definition)
