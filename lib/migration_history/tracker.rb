@@ -13,20 +13,16 @@ module MigrationHistory
       migration_files = Dir.glob(File.join(migration_path, "*.rb"))
 
       migration_histories = {}
+      methods = {}
+      ActiveRecord::Migration.prepend(MethodOverrides)
 
       migration_files.map do |file|
-        # ファイルを読み込む
-        require file
-
         # ファイル内で定義されているクラス名を抽出
-        class_name = nil
-        File.readlines(file).each do |line|
-          if line.strip.start_with?("class ")
-            class_name = line.strip.split(" ")[1]
-            break
-          end
-        end
-        next unless class_name
+        require file
+        result = extract_migration_methods(file)
+        puts "Processing: #{result}"
+        class_name = result[:class_name]
+        methods[class_name] = result[:methods]
 
         migration_histories[class_name] = {
           timestamp: File.basename(file).split("_").first.to_i,
@@ -40,15 +36,10 @@ module MigrationHistory
 
       migration_classes = migration_histories.keys
 
-      ActiveRecord::Migration::Compatibility.constants.each do |const_name|
-        mod = ActiveRecord::Migration::Compatibility.const_get(const_name)
-
-        if mod.is_a?(Module)
-          mod.prepend(MethodOverrides)
-        end
-      end
       migration_classes.each do |migration_class|
         migration_histories[migration_class] ||= {}
+        ignore_unknown_methods(methods[migration_class])
+
         result = Object.const_get(migration_class).new.exec_migration(nil, :up)
 
         next unless result
@@ -109,8 +100,12 @@ module MigrationHistory
         define_method(:column) do |name, type, **options|
           columns << { name: name, type: type, options: options }
         end
+
+        define_method(:method_missing) do |method_name, *args, **options|
+          args.each { |name| column(name, :method_name, **options) }
+        end
       end)
-      yield(table_definition)
+      yield(table_definition) if block_given?
 
       results << record_migration_action(:create_table, table_name: table_name, options: options)
       columns.each do |column|
@@ -163,5 +158,57 @@ module MigrationHistory
 
         migration_info
       end
+  end
+end
+
+require 'parser/current'
+
+class MigrationMethodExtractor < Parser::AST::Processor
+  attr_reader :methods, :current_class
+
+  def initialize
+    @methods = []
+    @current_class = nil
+  end
+
+  def on_class(node)
+    class_name, _superclass, body = *node
+    @current_class = class_name.children.last.to_s
+    process(body)
+  end
+
+  def on_send(node)
+    method_name = node.children[1]
+    if @current_class
+      @methods <<  method_name
+    end
+    super
+  end
+end
+
+def extract_migration_methods(file_path)
+  code = File.read(file_path)
+  ast = Parser::CurrentRuby.parse(code)
+
+  extractor = MigrationMethodExtractor.new
+  extractor.process(ast)
+
+  {
+    file_path: file_path,
+    class_name: extractor.current_class,
+    methods: extractor.methods
+  }
+end
+
+def ignore_unknown_methods(define_method)
+  allowed_methods = %i[create_table change_table add_column remove_column drop_table]
+  
+  unknown_methods = define_method - allowed_methods
+  unknown_methods.each do |method|
+    ActiveRecord::Migration.prepend(Module.new do
+      define_method(method) do |*args, **options|
+        puts "Ignoring unknown method: #{method}"
+      end
+    end)
   end
 end
