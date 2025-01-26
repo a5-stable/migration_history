@@ -109,6 +109,10 @@ module MigrationHistory
         define_method(:column) do |name, type, **options|
           columns << { name: name, type: type, options: options }
         end
+
+        define_method(:method_missing) do |method_name, *args, **options|
+          args.each { |name| column(name, :method_name, **options) }
+        end
       end)
       yield(table_definition)
 
