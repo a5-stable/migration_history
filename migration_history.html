@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration History</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      .container {
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+      }
+      .filter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 15px;
+        background-color: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .filter-group {
+        flex: 1;
+        min-width: 200px;
+      }
+      .filter-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .filter-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .date-filter .date-inputs {
+        display: flex;
+        gap: 10px;
+      }
+      .date-filter button {
+        padding: 10px 15px;
+        background-color: #007BFF;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .date-filter button:hover {
+        background-color: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        table-layout: fixed;
+        word-break: break-all;
+        word-wrap: break-all;
+      }
+      th, td {
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #ddd;
+      }
+      th {
+        background-color: #f4f4f4;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      th.sortable-header {
+        cursor: pointer;
+        user-select: none;
+      }
+      th.sortable-header:hover {
+        background-color: #eaeaea;
+      }
+      tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+      }
+      .sort-arrow {
+        margin-left: 5px;
+        visibility: hidden;
+      }
+      .sorted-asc .sort-arrow::after {
+        content: '▲';
+      }
+      .sorted-desc .sort-arrow::after {
+        content: '▼';
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Migration History</h1>
+      <div class="filter-container">
+        <div class="filter-group">
+          <label for="searchInput">Keyword Search</label>
+          <input type="text" id="searchInput" placeholder="Search by any keyword...">
+        </div>
+        <div class="filter-group">
+          <label for="searchInputByCol1">Target Table</label>
+          <input type="text" id="searchInputByCol1" placeholder="Search Target Table" onkeyup="filterTable(1)">
+        </div>
+        <div class="filter-group">
+          <label for="searchInputByCol2">Action</label>
+          <input type="text" id="searchInputByCol2" placeholder="Search Action" onkeyup="filterTable(2)">
+        </div>
+        <div class="filter-group date-filter">
+          <label>Date Range</label>
+          <div class="date-inputs">
+            <input type="date" id="searchInputBydatetimeStart" aria-label="Start Date">
+            <input type="date" id="searchInputBydatetimeEnd" aria-label="End Date">
+            <button onclick="filterByDateRange()">Filter</button>
+          </div>
+        </div>
+      </div>
+      <table id="migrationTable">
+        <thead>
+          <tr id="migrationTable-header">
+            <th class="sortable-header" onclick="sortTable(0)">DateTime <span class="sort-arrow"></span></th>
+            <th class="sortable-header" onclick="sortTable(1)">Target Table <span class="sort-arrow"></span></th>
+            <th class="sortable-header" onclick="sortTable(2)">Action <span class="sort-arrow"></span></th>
+            <th>Details</th>
+            <th>File Path</th>
+            <th>Git Commit</th>
+            <th>Git Branch</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            
+              <tr class="migrationTable-row">
+                <td>2025-01-10 01:01</td>
+                <td>users</td>
+                <td>create_table</td>
+                <td>
+                  Table: users<br>
+                  
+                  Options: {}
+                </td>
+                <td>20250110010100_create_users.rb</td>
+                <td></td>
+                <td></td>
+              </tr>
+            
+              <tr class="migrationTable-row">
+                <td>2025-01-10 01:01</td>
+                <td>users</td>
+                <td>add_column_with_create_table</td>
+                <td>
+                  Table: users<br>
+                  
+                    Column: id<br>
+                    Type: method_name<br>
+                  
+                  Options: {}
+                </td>
+                <td>20250110010100_create_users.rb</td>
+                <td></td>
+                <td></td>
+              </tr>
+            
+              <tr class="migrationTable-row">
+                <td>2025-01-10 01:01</td>
+                <td>users</td>
+                <td>add_column_with_create_table</td>
+                <td>
+                  Table: users<br>
+                  
+                    Column: name<br>
+                    Type: string<br>
+                  
+                  Options: {}
+                </td>
+                <td>20250110010100_create_users.rb</td>
+                <td></td>
+                <td></td>
+              </tr>
+            
+              <tr class="migrationTable-row">
+                <td>2025-01-10 01:01</td>
+                <td>users</td>
+                <td>add_column_with_create_table</td>
+                <td>
+                  Table: users<br>
+                  
+                    Column: email<br>
+                    Type: string<br>
+                  
+                  Options: {}
+                </td>
+                <td>20250110010100_create_users.rb</td>
+                <td></td>
+                <td></td>
+              </tr>
+            
+              <tr class="migrationTable-row">
+                <td>2025-01-10 01:01</td>
+                <td>users</td>
+                <td>add_column_with_create_table</td>
+                <td>
+                  Table: users<br>
+                  
+                    Column: created_at<br>
+                    Type: datetime<br>
+                  
+                  Options: {:null=>false}
+                </td>
+                <td>20250110010100_create_users.rb</td>
+                <td></td>
+                <td></td>
+              </tr>
+            
+              <tr class="migrationTable-row">
+                <td>2025-01-10 01:01</td>
+                <td>users</td>
+                <td>add_column_with_create_table</td>
+                <td>
+                  Table: users<br>
+                  
+                    Column: updated_at<br>
+                    Type: datetime<br>
+                  
+                  Options: {:null=>false}
+                </td>
+                <td>20250110010100_create_users.rb</td>
+                <td></td>
+                <td></td>
+              </tr>
+            
+          
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      let currentSortColumn = null; // To store the current sorted column index
+      let currentSortDirection = true; // true for ascending, false for descending
+
+      document.getElementById('searchInput').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#migrationTable .migrationTable-row');
+
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(filter) ? '' : 'none';
+        });
+      });
+
+      document.querySelectorAll('.searchInputByCol').forEach((input, index) => {
+        input.addEventListener('input', function() {
+          filterTable(index);
+        });
+      });
+
+      function filterTable(index) {
+        const filter = document.getElementById(`searchInputByCol${index}`).value.toLowerCase();
+        const rows = document.querySelectorAll('#migrationTable .migrationTable-row');
+
+        rows.forEach(row => {
+          const text = row.querySelectorAll('td')[index].textContent.toLowerCase();
+          row.style.display = text.includes(filter) ? '' : 'none';
+        });
+      }
+
+      function filterByDateRange() {
+        const startInput = document.getElementById('searchInputBydatetimeStart').value;
+        const endInput = document.getElementById('searchInputBydatetimeEnd').value;
+        const startDate = startInput ? new Date(startInput) : null;
+        const endDate = endInput ? new Date(endInput) : null;
+        const rows = document.querySelectorAll('#migrationTable .migrationTable-row');
+
+        rows.forEach(row => {
+          const dateCell = row.cells[0];
+          if (dateCell) {
+            const rowDate = new Date(dateCell.textContent.trim());
+            if (
+              (!startDate || rowDate >= startDate) &&
+              (!endDate || rowDate <= endDate)
+            ) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          }
+        });
+      }
+
+      function sortTable(columnIndex) {
+        const rows = Array.from(document.querySelectorAll('#migrationTable .migrationTable-row'));
+        const direction = currentSortColumn === columnIndex && currentSortDirection ? -1 : 1; // Toggle sort direction if same column
+
+        // Reset all column arrows
+        resetSortArrows();
+
+        rows.sort((rowA, rowB) => {
+          const cellA = rowA.cells[columnIndex].textContent.trim();
+          const cellB = rowB.cells[columnIndex].textContent.trim();
+
+          if (columnIndex === 0) { // For DateTime column, we compare Date objects
+            return (new Date(cellA) - new Date(cellB)) * direction;
+          }
+
+          return cellA.localeCompare(cellB) * direction;
+        });
+
+        rows.forEach(row => document.querySelector('tbody').appendChild(row));
+
+        // Update current sort column and direction
+        currentSortColumn = columnIndex;
+        currentSortDirection = direction === 1;
+
+        updateSortArrows();
+      }
+
+      function resetSortArrows() {
+        const headerCells = document.querySelectorAll('#migrationTable th');
+        headerCells.forEach(th => {
+          th.classList.remove('sorted-asc', 'sorted-desc');
+        });
+      }
+
+      function updateSortArrows() {
+        const headerCells = document.querySelectorAll('#migrationTable th');
+        const arrow = headerCells[currentSortColumn].querySelector('.sort-arrow');
+        if (!arrow) return;
+        if (currentSortDirection) {
+          headerCells[currentSortColumn].classList.add('sorted-asc');
+        } else {
+          headerCells[currentSortColumn].classList.add('sorted-desc');
+        }
+        arrow.style.visibility = 'visible';
+      }
+    </script>
+  </body>
+</html>
