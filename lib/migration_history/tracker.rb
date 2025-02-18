@@ -20,13 +20,14 @@ module MigrationHistory
 
       migration_files.map do |file|
         # ファイル内で定義されているクラス名を抽出
+
         require file
         result = extract_migration_methods(file)
         puts "Processing: #{result}"
         class_name = result[:class_name]
         methods = result[:methods]
-
         migration_histories[class_name] ||= {}
+
         ignore_unknown_methods(methods)
 
         migration_history = {
