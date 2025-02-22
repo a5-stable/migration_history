@@ -16,7 +16,9 @@ module MigrationHistory
       migration_files = Dir.glob(File.join(migration_path, "*.rb"))
 
       migration_histories = {}
-      ActiveRecord::Migration.prepend(MethodOverrides)
+      ActiveRecord::Migration.constants.constants.each do |const|
+        "ActiveRecord::Migration::#{const}".constantize.prepend(MethodOverrides)
+      end
 
       migration_files.map do |file|
         # ファイル内で定義されているクラス名を抽出

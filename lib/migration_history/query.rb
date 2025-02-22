@@ -16,7 +16,7 @@ module MigrationHistory
         raise InvalidError.new("Table name is required") unless table_name
 
         found_migration_info = tracker.migration_info.values.select do |v|
-          v[:actions].any? {|action|
+          v[:actions].to_a.any? { |action|
             action.dig(:details, :table_name) == table_name &&
               (column_name.nil? || action.dig(:details, :column_name) == column_name) &&
               (action_name.nil? || action[:action] == action_name)
