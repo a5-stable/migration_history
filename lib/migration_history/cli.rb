@@ -37,7 +37,7 @@ module MigrationHistory
       if options[:output]
         generate_html(result, options[:output])
       else
-        result.original_result.each do |entry|
+        result.original_result.each do |k, entry|
           puts "Timestamp: #{entry.timestamp}, Git Branch: #{entry.git_branch}, Git Commit: #{entry.git_commit}"
         end
       end
