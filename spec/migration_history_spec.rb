@@ -30,7 +30,6 @@ begin
       end
 
       a = MigrationHistory::Tracker.new("spec/migrations")
-      binding.irb
       a.setup!
     end
 

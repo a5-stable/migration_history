@@ -30,7 +30,7 @@ module MigrationHistory
         results << record_migration_action(:add_column_with_create_table, table_name: table_name, column_name: column[:name], type: column[:type], options: column[:options])
       end
 
-      results
+      @actions += results
     end
 
     def change_table(table_name, **options)
@@ -49,19 +49,19 @@ module MigrationHistory
         results << record_migration_action(:add_column, table_name: table_name, column_name: column[:name], type: column[:type], options: column[:options])
       end
 
-      results
+      @actions += results
     end
 
     def add_column(table_name, column_name, type, **options)
-      record_migration_action(:add_column, table_name: table_name, column_name: column_name, type: type, options: options)
+      @actions << record_migration_action(:add_column, table_name: table_name, column_name: column_name, type: type, options: options)
     end
 
     def remove_column(table_name, column_name, **options)
-      record_migration_action(:remove_column, table_name: table_name, column_name: column_name, options: options)
+      @actions << record_migration_action(:remove_column, table_name: table_name, column_name: column_name, options: options)
     end
 
     def drop_table(table_name, **options)
-      record_migration_action(:drop_table, table_name: table_name, options: options)
+      @actions << record_migration_action(:drop_table, table_name: table_name, options: options)
     end
 
     def method_missing(method_name, *args, **options)

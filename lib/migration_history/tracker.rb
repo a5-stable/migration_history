@@ -23,7 +23,6 @@ module MigrationHistory
 
         require file
         result = extract_migration_methods(file)
-        puts "Processing: #{result}"
         class_name = result[:class_name]
         methods = result[:methods]
         migration_histories[class_name] ||= {}
@@ -37,15 +36,19 @@ module MigrationHistory
           actions: []
         }
 
-        result = Object.const_get(class_name).new.exec_migration(nil, :up)
-        if result
-          if result.is_a?(Array)
-            migration_history[:actions] += result
-          else
-            migration_history[:actions] << result
-          end
-        end
+        klass = Object.const_get(class_name)
 
+        klass.prepend(Module.new do
+          define_method(:exec_migration) do |connection, direction|
+            @actions ||= []
+            super(connection, direction)
+          end
+        end)
+
+        klass_instace = klass.new
+        klass_instace.exec_migration(nil, :up)
+
+        migration_history[:actions] += klass_instace.instance_variable_get(:@actions)
         migration_histories[class_name] = migration_history
       rescue => e
         puts "Error: #{e.message}"
