@@ -53,8 +53,8 @@ module MigrationHistory
       if options[:output]
         generate_html(result, options[:output])
       else
-        result.each do |entry|
-          puts "Timestamp: #{entry.timestamp}, Git Branch: #{entry.git_branch}, Git Commit: #{entry.git_commit}"
+        result.original_result.each do |_, entry|
+          puts "Timestamp: #{entry.timestamp}"
         end
       end
     end
@@ -72,8 +72,8 @@ module MigrationHistory
       if options[:output]
         generate_html(result, options[:output])
       else
-        result.each do |entry|
-          puts "Timestamp: #{entry.timestamp}, Git Branch: #{entry.git_branch}, Git Commit: #{entry.git_commit}"
+        result.original_result.each do |_, entry|
+          puts "Timestamp: #{entry.timestamp}"
         end
       end
     end
@@ -81,7 +81,7 @@ module MigrationHistory
     private
       def generate_html(result, output_file)
         Formatter::HTMLFormatter.new.format(result)
-        puts "HTMLファイルが #{output_file} に出力されました。"
+        puts "output to #{output_file}"
       end
   end
 end
