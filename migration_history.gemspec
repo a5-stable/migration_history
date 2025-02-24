@@ -10,19 +10,19 @@ Gem::Specification.new do |spec|
   spec.authors       = ["a5-stable"]
   spec.email         = ["sh07e1916@gmail.com"]
 
-  spec.summary       = "Write a short summary, because RubyGems requires one."
-  spec.description   = "aaaa"
-  spec.homepage      = "https://yahoo.co.jp"
+  spec.summary       = "A Gem to track and collect migration history in Rails projects, including when tables and columns were added, with details available in various formats"
+  spec.description   = "Track and collect detailed migration history in Rails, including table/column changes, with flexible output formats such as HTML, CLI, and more."
+  spec.homepage      = "https://github.com/a5-stable"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
   if spec.respond_to?(:metadata)
-    spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
+    # spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
 
     spec.metadata["homepage_uri"] = spec.homepage
-    spec.metadata["source_code_uri"] = "https://yahoo.co.jp"
-    spec.metadata["changelog_uri"] = "https://yahoo.co.jp"
+    spec.metadata["source_code_uri"] = "https://github.com/a5-stable/migration_history"
+    spec.metadata["changelog_uri"] = "https://github.com/a5-stable/migration_history"
   else
     raise "RubyGems 2.0 or newer is required to protect against " \
       "public gem pushes."
@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "rails", ">= 7.0.1"
+  spec.add_dependency "rails", ">= 6.0"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake", ">= 12.2"
