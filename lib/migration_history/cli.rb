@@ -5,6 +5,7 @@ require "erb"
 require "migration_history"
 require "migration_history/formatter/html_formatter"
 require "migration_history/formatter/json_formatter"
+require "time"
 
 module MigrationHistory
   class CLI < Thor
@@ -24,7 +25,8 @@ module MigrationHistory
         generate_html(result, options[:output])
       else
         result.original_result.each do |_, entry|
-          puts "ClassName: #{entry[:class_name]}, Timestamp: #{entry[:timestamp]}"
+          timestamp = Time.strptime(entry[:timestamp], "%Y%m%d%H%M%S") rescue entry[:timestamp]
+          puts "ClassName: #{entry[:class_name]}, Timestamp: #{timestamp}"
         end
       end
     end
@@ -43,7 +45,8 @@ module MigrationHistory
         puts "Output to #{formatter.output_file_name_with_extension}"
       else
         result.original_result.each do |_, entry|
-          puts "ClassName: #{entry[:class_name]}, Timestamp: #{entry[:timestamp]}"
+          timestamp = Time.strptime(entry[:timestamp], "%Y%m%d%H%M%S") rescue entry[:timestamp]
+          puts "ClassName: #{entry[:class_name]}, Timestamp: #{timestamp}"
         end
       end
     end
