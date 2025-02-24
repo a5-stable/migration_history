@@ -12,8 +12,8 @@ RSpec.describe MigrationHistory::Tracker do
       expect(tracker.migration_file_dir).to eq("spec/migrations")
     end
 
-    it "initializes migration_info as an empty array" do
-      expect(tracker.migration_info).to eq([])
+    it "initializes migration_info as an empty hash" do
+      expect(tracker.migration_info).to eq({})
     end
   end
 
@@ -36,11 +36,12 @@ RSpec.describe MigrationHistory::Tracker do
 
       expected_actions = [
         { action: :create_table, details: { table_name: :users, options: {} } },
-        { action: :add_column_with_create_table, details: { table_name: :users, column_name: :id, type: :method_name, options: {} } },
-        { action: :add_column_with_create_table, details: { table_name: :users, column_name: :name, type: :string, options: {} } },
-        { action: :add_column_with_create_table, details: { table_name: :users, column_name: :email, type: :string, options: {} } },
-        { action: :add_column_with_create_table, details: { table_name: :users, column_name: :created_at, type: :datetime, options: { null: false } } },
-        { action: :add_column_with_create_table, details: { table_name: :users, column_name: :updated_at, type: :datetime, options: { null: false } } }
+        { action: :add_column, details: { table_name: :users, column_name: :id, type: :uuid, options: {} } },
+        { action: :add_column, details: { table_name: :users, column_name: :nickname, type: :string, options: { default: "Tom" } } },
+        { action: :add_column, details: { table_name: :users, column_name: :name, type: :string, options: {} } },
+        { action: :add_column, details: { table_name: :users, column_name: :email, type: :string, options: {} } },
+        { action: :add_column, details: { table_name: :users, column_name: :created_at, type: :datetime, options: {} } },
+        { action: :add_column, details: { table_name: :users, column_name: :updated_at, type: :datetime, options: {} } },
       ]
       expect(create_table_history[:actions]).to eq(expected_actions)
     end

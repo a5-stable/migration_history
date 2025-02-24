@@ -12,7 +12,7 @@
         background-color: #f4f4f4;
       }
       .container {
-        width: 100%;
+        width: 80%;
         margin: 0 auto;
         padding: 20px;
         background-color: #fff;
@@ -52,6 +52,7 @@
       }
       .date-filter .date-inputs {
         display: flex;
+        flex-wrap: wrap;
         gap: 10px;
       }
       .date-filter button {
@@ -65,6 +66,14 @@
       }
       .date-filter button:hover {
         background-color: #0056b3;
+      }
+      .date-filter-wrapper {
+        background-color: #f0f0f0; /* 任意の背景色 */
+        padding: 15px;
+        border-radius: 8px; /* 任意の角丸 */
+      }
+      .date-filter-wrapper .date-filter {
+        margin-bottom: 10px;
       }
       table {
         width: 100%;
@@ -126,12 +135,14 @@
           <label for="searchInputByCol2">Action</label>
           <input type="text" id="searchInputByCol2" placeholder="Search Action" onkeyup="filterTable(2)">
         </div>
-        <div class="filter-group date-filter">
-          <label>Date Range</label>
-          <div class="date-inputs">
-            <input type="date" id="searchInputBydatetimeStart" aria-label="Start Date">
-            <input type="date" id="searchInputBydatetimeEnd" aria-label="End Date">
-            <button onclick="filterByDateRange()">Filter</button>
+        <div class="filter-group date-filter-wrapper">
+          <div class="filter-group date-filter">
+            <label>Date Range</label>
+            <div class="date-inputs">
+              <input type="date" id="searchInputBydatetimeStart" aria-label="Start Date">
+              <input type="date" id="searchInputBydatetimeEnd" aria-label="End Date">
+              <button onclick="filterByDateRange()">Filter by Date</button>
+            </div>
           </div>
         </div>
       </div>
@@ -142,9 +153,7 @@
             <th class="sortable-header" onclick="sortTable(1)">Target Table <span class="sort-arrow"></span></th>
             <th class="sortable-header" onclick="sortTable(2)">Action <span class="sort-arrow"></span></th>
             <th>Details</th>
-            <th>File Path</th>
-            <th>Git Commit</th>
-            <th>Git Branch</th>
+            <th>File Name</th>
           </tr>
         </thead>
         <tbody>
@@ -162,9 +171,7 @@
                   <% end %>
                   Options: <%= action.dig(:details, :options).inspect %>
                 </td>
-                <td><%= migration[:migration_file_name] %></td>
-                <td><%= migration[:git_commit] %></td>
-                <td><%= migration[:git_branch] %></td>
+                <td><%= migration[:file_path] %></td>
               </tr>
             <% end %>
           <% end %>

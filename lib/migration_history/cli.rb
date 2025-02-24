@@ -3,16 +3,16 @@
 require "thor"
 require "erb"
 require "migration_history"
-require "migration_history/formatter/base"
 require "migration_history/formatter/html_formatter"
+require "migration_history/formatter/json_formatter"
 
 module MigrationHistory
   class CLI < Thor
-    desc "filter", "フィルタリングしてマイグレーション履歴を取得"
-    option :table, required: true, desc: "テーブル名"
-    option :column, required: false, desc: "カラム名"
-    option :action, required: false, desc: "アクション名"
-    option :output, required: false, desc: "HTML出力ファイル名"
+    desc "filter", "Retrieve migration history with filtering"
+    option :table, required: true, desc: "Table name"
+    option :column, required: false, desc: "Column name"
+    option :action, required: false, desc: "Action name"
+    option :output, required: false, desc: "HTML output file name"
     def filter
       table_name = options[:table]
       column_name = options[:column]
@@ -29,13 +29,18 @@ module MigrationHistory
       end
     end
 
-    desc "all", "全てのマイグレーション履歴を取得"
-    option :output, required: false, desc: "HTML出力ファイル名"
+    desc "all", "Retrieve all migration history"
+    option :format, required: false, desc: "Output format"
+    option :output, required: false, desc: "HTML output file name"
     def all
       result = MigrationHistory.all
 
-      if options[:output]
-        generate_html(result, options[:output])
+      if options[:format]
+        formatter = find_formatter(options[:format])
+        formatter.output_file_name = options[:output] if options[:output]
+
+        formatter.format(result)
+        puts "Output to #{formatter.output_file_name_with_extension}"
       else
         result.original_result.each do |_, entry|
           puts "ClassName: #{entry[:class_name]}, Timestamp: #{entry[:timestamp]}"
@@ -44,9 +49,10 @@ module MigrationHistory
     end
 
     private
-      def generate_html(result, output_file)
-        Formatter::HTMLFormatter.new.format(result)
-        puts "output to #{output_file}"
+      def find_formatter(format)
+        Object.const_get("MigrationHistory::Formatter::#{format.capitalize}Formatter").new
+      rescue
+        raise ArgumentError, "Invalid format: #{format}, available formats: html, json"
       end
   end
 end
